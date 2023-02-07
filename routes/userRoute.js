@@ -26,14 +26,23 @@ router.get('/:userId', async (req, res) => {
 
 // Create a user
 router.post('/', async (req, res) => {
-    const user = new User({
-        name: req.body.name,
-        email: req.body.email,
-        password: req.body.password
-    });
+    console.log(req.body)
     try {
-        const savedUser = await user.save();
-        res.json(savedUser);
+        
+        const user = User.findOne({ 
+            email: req.body.email 
+        }).then(user => {
+            if (user) {
+                return res.status(400).json({ email: "Email already exists" });
+            } else {
+                const newUser = new User({
+                    name: req.body.name,
+                    email: req.body.email,
+                    password: req.body.password
+                });
+                newUser.save().then(user => res.json(user)).catch(err => console.log(err));
+            }
+        });
     } catch (err) {
         res.json({ message: err });
     }
@@ -50,11 +59,21 @@ router.delete('/:userId', async (req, res) => {
     }
 });
 
+// Delete a user using email
+router.delete('/:email', async (req, res) => {
+    try {
+        const removedUser = await User.remove({ email: req.params.email });
+        res.json(removedUser);
+    } catch (err) {
+        res.json({ message: err });
+    }
+});
+
 // Update a user
-router.patch('/:userId', async (req, res) => {
+router.patch('/:email', async (req, res) => {
     try {
         const updatedUser = await User.updateOne(
-            { _id: req.params.userId },
+            { email: req.params.email },
             { $set: { name: req.body.name } }
         );
         res.json(updatedUser);
